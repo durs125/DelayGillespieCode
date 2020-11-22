@@ -11,7 +11,7 @@ from numpy import random
  http://localhost:8888/edit/BioResearch/python/Functions.py#   NOTE: There is no checking for negative values in this version.'''
 
 
-def gillespie(reactions_list, stop_time, initial_state_vector):
+def gillespie(reactions_list: object, stop_time: object, initial_state_vector: object) -> object:
     [state_vector, current_time, service_queue, time_series] = initialize(initial_state_vector)#changed
   
     
@@ -21,12 +21,12 @@ def gillespie(reactions_list, stop_time, initial_state_vector):
         next_event_time = draw_next_event_time(current_time, cumulative_propensities)
         if reaction_will_complete(service_queue, next_event_time):
             [state_vector, current_time] = trigger_next_reaction(service_queue, state_vector)
-            time_series =  update_time_series(time_series, current_time, state_vector) # needed to set this equal to something or the file was blank,DMI 11/16/2020
+            time_series = update_time_series(time_series, current_time, state_vector)
             continue
         current_time = next_event_time
         next_reaction = choose_reaction(cumulative_propensities, reactions_list)
         processing_time = next_reaction.distribution()
-        if processing_time == 1: # for the love of god, someone check this for me, all the other versions of code have ==0, DMI 11/16/2020
+        if processing_time == 1:
             state_vector = state_vector + next_reaction.change_vec
             time_series = update_time_series(time_series, current_time, state_vector)
         else:
@@ -101,8 +101,8 @@ def trigger_next_reaction(queue, state_vector):
 
 def update_time_series(time_series, current_time, state_vector):
     return time_series.append(pd.DataFrame([[current_time, state_vector]],
-                                           columns=['time', 'state']), ignore_index=True) #this was passed by value as a function input, updating it here does nothing DMI 11/16/2020
-#pass # we are not sure if it is memory efficient to have this function or if it is better to reove the content of this function and move to where the function is called
+                                           columns=['time', 'state']), ignore_index=True)
+ # we are not sure if it is memory efficient to hae this function or if it is better to reove the content of this function and move to where the function is called
 
 ''' dataframe_to_numpyarray allows us to use the more efficient DataFrame class to record time series
     and then convert that object back into a usable numpy array. '''
@@ -121,15 +121,14 @@ def dataframe_to_numpyarray(framed_data):
 def gillespie_sim(mu, cv, alpha, beta, R0, C0, yr,param,par,dilution,enzymatic_degradation):
 #model parameters
     init_Protein = (alpha - yr) * ( mu - C0 * (math.sqrt(alpha / yr) - 1) / yr)   # calculate the avg peak to initialize at a peak
-    production = Classy.Reaction(np.array([1], dtype=int), 0, 1, [alpha, C0, 2], 0, [mu, mu * cv])
-    timeRun = 1600  #800 minutes are discarded in out of a 1600 minute run. DMI 11/16/2020
+    timeRun = 4000
 #Naming files and paths
     path1 = 'PostProcessing/Simulations/{}{}'.format(param,par)
     file_name =   '{}/mean={}_CV={}.csv'.format(path1,mu,cv)
 
-#Gillespie 
-    time_series = gillespie(np.array([production, enzymatic_degradation, dilution]), timeRun,
-                                np.array([init_Protein], dtype=int))
+#Gillespie
 
-    pd.DataFrame(time_series).to_csv(file_name, header=False, index=False)
+
+    #pd.DataFrame(time_series).to_csv(file_name, header=False, index=False)
     return file_name
+
