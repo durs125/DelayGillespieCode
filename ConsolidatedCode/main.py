@@ -20,7 +20,7 @@ enzymatic_degradation = M3.Gill.Classy.Reaction(np.array([-1], dtype=int), 0, 0,
 
 tempReactionList = np.array([production, enzymatic_degradation, dilution])
 tempStopTime = 400
-tempInitialState = np.array([0], dtype=int)
+tempInitialState = np.array([160], dtype=int)
 tempRunCount = 1
 tempBurnInTime = 200
 tempSampleRate = 10
