@@ -11,26 +11,43 @@ from numpy import random
  http://localhost:8888/edit/BioResearch/python/Functions.py#   NOTE: There is no checking for negative values in this version.'''
 
 
-def gillespie(reactions_list: object, stop_time: object, initial_state_vector: object) -> object:
+def gillespie(reactions_list, stop_time, initial_state_vector):
     [state_vector, current_time, service_queue, time_series] = initialize(initial_state_vector)#changed
-  
-    
-    while current_time < stop_time:
+    subIterations = 220   
+#computationally, appending one row to a time series 100k times is expensive. It is much cheaper to append 100 rows to the time series 1k times
+#As such, a subseries has 
+# the equation for how many computations are required =
+#0.5*(data_rows/subIterations+1)*data_rows+(subIterations+2)*(subIterations+1)*data_rows/(2*data_rows) This is optimized for about 50000 rows, actual use varies but for the estimated values this results in only .7% time used
 
-        cumulative_propensities = calculate_propensities(state_vector, reactions_list)
-        next_event_time = draw_next_event_time(current_time, cumulative_propensities)
-        if reaction_will_complete(service_queue, next_event_time):
-            [state_vector, current_time] = trigger_next_reaction(service_queue, state_vector)
-            time_series = update_time_series(time_series, current_time, state_vector)
-            continue
-        current_time = next_event_time
-        next_reaction = choose_reaction(cumulative_propensities, reactions_list)
-        processing_time = next_reaction.distribution()
-        if processing_time == 0:
-            state_vector = state_vector + next_reaction.change_vec
-            time_series = update_time_series(time_series, current_time, state_vector)
-        else:
-            add_reaction(service_queue, current_time + processing_time, next_reaction)
+    while current_time < stop_time:
+        time_subseries =[]
+        iter = 0
+        while current_time < stop_time and iter<subIterations:
+
+            print("length")
+            print(len(time_subseries))
+            cumulative_propensities = calculate_propensities(state_vector, reactions_list)
+            next_event_time = draw_next_event_time(current_time, cumulative_propensities)
+            if reaction_will_complete(service_queue, next_event_time):
+                [state_vector, current_time] = trigger_next_reaction(service_queue, state_vector)
+                time_subseries = update_time_series(time_subseries, current_time, state_vector)
+
+                continue
+            current_time = next_event_time
+            next_reaction = choose_reaction(cumulative_propensities, reactions_list)
+            processing_time = next_reaction.distribution()
+            if processing_time == 0: # DMI
+                state_vector = state_vector + next_reaction.change_vec
+                time_subseries = update_time_series(time_subseries, current_time, state_vector)
+            else:
+                add_reaction(service_queue, current_time + processing_time, next_reaction)
+                print("lenth")
+                print(time_subseries)
+                print(len(time_subseries))
+            if(len(time_subseries)>0):
+                iter = len(time_subseries[:,0])
+        time_series = time_series.append(time_subseries)# append the subseries to the series
+
     return dataframe_to_numpyarray(time_series)
 
 
