@@ -23,9 +23,6 @@ def gillespie(reactions_list, stop_time, initial_state_vector):
         time_subseries =pd.DataFrame()
         iter = 0
         while current_time < stop_time and iter<subIterations:
-
-            print("length")
-            print(len(time_subseries))
             cumulative_propensities = calculate_propensities(state_vector, reactions_list)
             next_event_time = draw_next_event_time(current_time, cumulative_propensities)
             if reaction_will_complete(service_queue, next_event_time):
@@ -41,9 +38,6 @@ def gillespie(reactions_list, stop_time, initial_state_vector):
                 time_subseries = update_time_series(time_subseries, current_time, state_vector)
             else:
                 add_reaction(service_queue, current_time + processing_time, next_reaction)
-            print("lenth")
-            print(time_subseries)
-            print(len(time_subseries))
             if(len(time_subseries)>0):
                 iter = len(time_subseries)
         time_series = time_series.append(time_subseries)# append the subseries to the series
