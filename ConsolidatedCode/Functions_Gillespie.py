@@ -13,14 +13,14 @@ from numpy import random
 
 def gillespie(reactions_list, stop_time, initial_state_vector):
     [state_vector, current_time, service_queue, time_series] = initialize(initial_state_vector)#changed
-    subIterations = 220   
+    subIterations = 220
 #computationally, appending one row to a time series 100k times is expensive. It is much cheaper to append 100 rows to the time series 1k times
-#As such, a subseries has 
+#As such, a subseries has
 # the equation for how many computations are required =
 #0.5*(data_rows/subIterations+1)*data_rows+(subIterations+2)*(subIterations+1)*data_rows/(2*data_rows) This is optimized for about 50000 rows, actual use varies but for the estimated values this results in only .7% time used
 
     while current_time < stop_time:
-        time_subseries =[]
+        time_subseries =pd.DataFrame()
         iter = 0
         while current_time < stop_time and iter<subIterations:
 
@@ -41,11 +41,11 @@ def gillespie(reactions_list, stop_time, initial_state_vector):
                 time_subseries = update_time_series(time_subseries, current_time, state_vector)
             else:
                 add_reaction(service_queue, current_time + processing_time, next_reaction)
-                print("lenth")
-                print(time_subseries)
-                print(len(time_subseries))
+            print("lenth")
+            print(time_subseries)
+            print(len(time_subseries))
             if(len(time_subseries)>0):
-                iter = len(time_subseries[:,0])
+                iter = len(time_subseries)
         time_series = time_series.append(time_subseries)# append the subseries to the series
 
     return dataframe_to_numpyarray(time_series)
