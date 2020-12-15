@@ -44,9 +44,9 @@ def gillespie(reactions_list, stop_time, initial_state_vector):
                 add_reaction(service_queue, current_time + processing_time, next_reaction)
             if(len(time_subseries)>0):
                 iter = len(time_subseries)
-        print(type(time_series))
+        '''print(type(time_series))
         print(type(time_subseries))
-        print(time_subseries)
+        print(time_subseries)'''
         if len(time_series)<3:
             time_series = time_subseries
         else:
