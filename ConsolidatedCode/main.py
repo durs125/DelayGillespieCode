@@ -35,6 +35,15 @@ def Initialize_Classes(initialize_Gillespie):
     reactionList = np.array([production, enzymatic_degradation, dilution])
     return reactionList
 
+
+def chop_peaks(signal, filename, chop_size=2000):
+    with open(filename, 'w') as record_peaks:
+        for index in range(int(max(np.shape(signal))/chop_size)):
+            start = index * (chop_size + 1)
+            peak_data = detect_peaks(signal[start:(start + chop_size), :])
+            np.savetxt(record_peaks, peak_data, delimiter=',')
+
+
 mean_range = np.linspace(5, 10, 16)
 cv_range = np.linspace(0, .5, 16)
 alpha = 300
