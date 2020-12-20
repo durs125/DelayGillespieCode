@@ -80,15 +80,12 @@ def run_pipeline_splits(initialize_Gillespie,  runVector, path1):
 
 
 def run_pipeline_single(initialize_Gillespie,  runVector, path1):
-    # Prepare the reactions classes.
-    #[alpha, beta, yr, r0, c0, mu, cv, initialState, run_count, production, enzymatic_degradation, dilution ] = initialize_Gillespie
     print(initialize_Gillespie)
-    [alpha, beta, yr, r0, c0, mu, cv, initialState, run_count ] = initialize_Gillespie [0:9] #DMI
-    #[[alpha, beta, yr, R0, C0, mu, cv, initialState, run]]
-    initialState = np.array([initialState], dtype=int)
-    #params = [alpha, beta, yr, r0, c0, mu, cv, int(initialState), run_count] #DMI
-    [stopTime, runCount, burnInTime, sampleRate] = runVector
-    #print(run_count)
+    ''' Make 87-95 it's own function. To be written in main.py 
+        -SPC
+        ''' 
+    [alpha, beta, yr, r0, c0, mu, cv, initialState, run_count] = initialize_Gillespie [0:9]  # remove runcount, remove indexing, get rid of extra shit in main.py
+    
     dilution = Classy.Reaction(np.array([-1], dtype=int), 0, 0, [0, beta, 1, 0], 1, [0])
 
     enzymatic_degradation = Classy.Reaction(np.array([-1], dtype=int), 0, 0, [0, yr, r0, 1], 1, [0])
@@ -97,32 +94,31 @@ def run_pipeline_single(initialize_Gillespie,  runVector, path1):
 
     reactionList = np.array([production, enzymatic_degradation, dilution])
 
-
+    initialState = np.array([initialState], dtype=int)  #Do we need to recreate initialState? Probably put this in main.py
+    [stopTime, runCount, burnInTime, sampleRate] = runVector # remove runcount
+    
+    ''' Rename temp_* to just * and make filenames "human readable" in lines 102,103
+        -SPC'''
     temp_signalcsv = path1 + '{}temp_signal.csv'.format( initialize_Gillespie )
     temp_peakscsv = path1 + "{}temp_peaks.csv".format( initialize_Gillespie )
+    ''' move line 105 to main.py and put all stats in a single file. -SPC '''
     statscsv = path1 + "{}stats.csv".format( initialize_Gillespie )
 
-    tempOutFileSignal = open(temp_signalcsv, 'a')
-    tempOutFilePeaks = open(temp_peakscsv, 'a')
-    OutFileStats = open(statscsv, 'a')
+    tempOutFileSignal = open(temp_signalcsv, 'a')  # refactor temp and open with 'w' instead of 'a'
+    tempOutFilePeaks = open(temp_peakscsv, 'a')  # refactor temp and open with 'w' instead of 'a'
+    OutFileStats = open(statscsv, 'a')  # VERY IMPORTANT TO KEEP AS 'a'
 
-    # header = "alpha, beta, yr, r0, c0, mu, cv, initialState, peaks, run_count"
-    # np.savetxt("temp_peaks.csv", header, delimiter=",")
     print("Gillespie start")
 
-    tempSignal = Gill.gillespie(reactionList, stopTime, initialState)
-    np.zeros(min(tempSignal.shape[1],9))
-    np.savetxt(temp_signalcsv, initialize_Gillespie, delimiter=",")
+    tempSignal = Gill.gillespie(reactionList, stopTime, initialState)  # refactor tempSignal to Signal
+    np.savetxt(temp_signalcsv, initialize_Gillespie, delimiter=",")  # maybe make this a header
     np.savetxt(temp_signalcsv, tempSignal, delimiter=",")
     print(tempSignal)
     burned_in_signal = Post.burn_in_time_series(tempSignal, burnInTime)  # this needs to be passed by reference.
     uniform_sampling = Post.uniformly_sample(burned_in_signal, sampleRate)  # this needs to be passed by reference.
+    ''' Break up time series here '''
     peaks = Post.detect_peaks(uniform_sampling)
     to_peak_file = initialize_Gillespie.extend(peaks)  # DMI  FIX!, issue: the peaks are in the form of time and height.
-    #   thing = np.zeros(peaks.shape[1]))
-    #    thing[:] = ' '.join(map(str, my_lst))
-    #   to_peak_file[len(to_peak_file):] =
-    # need to add the parameters to each line
 
     # recommended fix in format of making the peak data have a different set of deliminators than the other data
     # other fix, just put the parameters near the peak amp and time, along with a slice number
@@ -144,5 +140,3 @@ def run_pipeline_single(initialize_Gillespie,  runVector, path1):
     '''
     return
 
-# init_Protein = (alpha - yr) * ( mu - C0 * (math.sqrt(alpha / yr) - 1) / yr)   # calculate the avg peak to initialize at a peak
-# time_series = gillespie(np.array([production, enzymatic_degradation, dilution]), timeRun,np.array([init_Protein], dtype=int))
