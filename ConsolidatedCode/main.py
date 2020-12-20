@@ -24,7 +24,7 @@ from Functions_DegradeFire4a import gillespie_sim
 # main
 
 def Initialize_Classes(initialize_Gillespie):
-    [alpha, beta, yr, r0, c0, mu, cv] = initialize_Gillespie[0:7]  # remove runcount, remove indexing, get rid of extra shit in main.py
+    [alpha, beta, yr, r0, c0, mu, cv] = initialize_Gillespie  # remove runcount, remove indexing, get rid of extra shit in main.py
 
     dilution = Classy.Reaction(np.array([-1], dtype=int), 0, 0, [0, beta, 1, 0], 1, [0])
 
