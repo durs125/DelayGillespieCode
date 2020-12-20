@@ -236,23 +236,13 @@ def run_pipeline_single(initialize_Gillespie,  runVector, path1):
 
 
 
-def Initialize_Classes(initialize_Gillespie):
-    [alpha, beta, yr, r0, c0, mu, cv] = initialize_Gillespie[0:7]  # remove runcount, remove indexing, get rid of extra shit in main.py
 
-    dilution = Classy.Reaction(np.array([-1], dtype=int), 0, 0, [0, beta, 1, 0], 1, [0])
-
-    enzymatic_degradation = Classy.Reaction(np.array([-1], dtype=int), 0, 0, [0, yr, r0, 1], 1, [0])
-    print("degrade")
-    production = Classy.Reaction(np.array([1], dtype=int), 0, 1, [alpha, c0, 2], 0, [mu, mu * cv])
-
-    reactionList = np.array([production, enzymatic_degradation, dilution])
-    return reactionList
 
 def run_pipeline_single2(initialize_Gillespie, runVector, path1):
     print(initialize_Gillespie)
 
     reactionList = Initialize_Classes(initialize_Gillespie[0:7])
-    initialState = initialize_Gillespie[7]  # remove runcount, remove indexing, get rid of extra shit in main.py
+    initialState = initialize_Gillespie[8]  # remove runcount, remove indexing, get rid of extra shit in main.py
 
     initialState = np.array([initialState],dtype=int)  # Do we need to recreate initialState? Probably put this in main.py
     [stopTime, runCount, burnInTime, sampleRate] = runVector  # remove runcount
