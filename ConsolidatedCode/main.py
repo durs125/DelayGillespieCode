@@ -23,6 +23,17 @@ from Functions_DegradeFire4a import gillespie_sim
 
 # main
 
+def Initialize_Classes(initialize_Gillespie):
+    [alpha, beta, yr, r0, c0, mu, cv] = initialize_Gillespie[0:7]  # remove runcount, remove indexing, get rid of extra shit in main.py
+
+    dilution = Classy.Reaction(np.array([-1], dtype=int), 0, 0, [0, beta, 1, 0], 1, [0])
+
+    enzymatic_degradation = Classy.Reaction(np.array([-1], dtype=int), 0, 0, [0, yr, r0, 1], 1, [0])
+    print("degrade")
+    production = Classy.Reaction(np.array([1], dtype=int), 0, 1, [alpha, c0, 2], 0, [mu, mu * cv])
+
+    reactionList = np.array([production, enzymatic_degradation, dilution])
+    return reactionList
 
 mean_range = np.linspace(5, 10, 16)
 cv_range = np.linspace(0, .5, 16)
@@ -101,11 +112,12 @@ for par1 in par_range1:
                 for run in range(iterations):  # list all parameters here, they will be made into a list # [alpha,
                     # the following initial state is only for the degrade and fire model
                     initialState = int((alpha - yr) * (mu - C0 * (math.sqrt(alpha / yr) - 1) / yr) * (.1 / (.1 + cv)))
+                    initialState = np.array([initialState], dtype=int)
 
                     dilution = Classy.Reaction(np.array([-1], dtype=int), 0, 0, [0, beta, 1, 0], 1, [0])
                     enzymatic_degradation = Classy.Reaction(np.array([-1], dtype=int), 0, 0, [0, yr, R0, 1], 1, [0])
                     production = Classy.Reaction(np.array([1], dtype=int), 0, 1, [alpha, C0, 2], 0, [mu, mu * cv])
-                    vector_Initialize_Gillespie = [[alpha, beta, yr, R0, C0, mu, cv, initialState, run]]
+                    vector_Initialize_Gillespie = [[alpha, beta, yr, R0, C0, mu, cv, initialState]]
                     # order of entry vecor
                     Initialize_Gillespie = Initialize_Gillespie + vector_Initialize_Gillespie
                 file_name = 'mean=' + str(mu) + '_CV=' + str(cv) + '.csv'
@@ -135,7 +147,7 @@ try:
     runVector = [stopTime, runCount, burnInTime, sampleRate]
 
    # Mod.run_pipeline_splits(Initialize_Gillespie[2], runVector, path1)
-    pool2.starmap(Mod.run_pipeline_single,
+    pool2.starmap(Mod.run_pipeline_single2,
                       [(Gillespie_vector, runVector, path1) for Gillespie_vector in Initialize_Gillespie])
 finally:
     pool2.close()
