@@ -185,7 +185,6 @@ def list_for_parallelization(parameter_ranges, long_list):
         for index1 in range(par_range):
             for index2 in range(index1 * current_length, (index1 + 1) * current_length):
                 long_list[index2] = long_list[index2] + [parameter_ranges[0][index1]]
-        print(long_list)
         list_for_parallelization(parameter_ranges[1:], long_list)
     else:
         return long_list
