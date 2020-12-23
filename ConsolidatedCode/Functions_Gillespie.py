@@ -167,3 +167,27 @@ def gillespie_sim(mu, cv, alpha, beta, R0, C0, yr, param, par, dilution, enzymat
 
     pd.DataFrame(time_series).to_csv(file_name, header=False, index=False)
     return file_name
+
+   
+   ''' list_for_parallelization converts the tensor of parameter values into a long list for parallelization. 
+    example usage: list_for_parallelization([[4,5,6],[7,8,9]], [[1],[2],[3]])
+    returns [[1, 4, 7], [2, 4, 7], [3, 4, 7], [1, 5, 7], [2, 5, 7], [3, 5, 7], [1, 6, 7], [2, 6, 7], [3, 6, 7], 
+             [1, 4, 8], [2, 4, 8], [3, 4, 8], [1, 5, 8], [2, 5, 8], [3, 5, 8], [1, 6, 8], [2, 6, 8], [3, 6, 8], 
+             [1, 4, 9], [2, 4, 9], [3, 4, 9], [1, 5, 9], [2, 5, 9], [3, 5, 9], [1, 6, 9], [2, 6, 9], [3, 6, 9]]
+'''
+
+
+def list_for_parallelization(parameter_ranges, long_list):
+    if len(parameter_ranges) != 0:
+        par_range = len(parameter_ranges[0])
+        current_length = len(long_list)
+        long_list = long_list * par_range
+        for index1 in range(par_range):
+            for index2 in range(index1 * current_length, (index1 + 1) * current_length):
+                long_list[index2] = long_list[index2] + [parameter_ranges[0][index1]]
+        print(long_list)
+        list_for_parallelization(parameter_ranges[1:], long_list)
+    else:
+        return long_list
+
+   
