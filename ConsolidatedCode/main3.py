@@ -59,6 +59,7 @@ with mp.Pool(safeProcessors) as pool2:
     Path(path).mkdir(parents=True, exist_ok=True)
     parameter_sets = Gill.list_for_parallelization([alpha, beta, gamma_r, R0, C0, mu, cv, [[0]]])
 
+
     try:
         pool2.starmap(run_pipeline,
                           [(parameter_set, [stop_time, burn_time, sample_rate], path) for parameter_set in parameter_sets])
