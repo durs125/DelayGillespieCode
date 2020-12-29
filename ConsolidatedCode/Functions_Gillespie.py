@@ -1,67 +1,45 @@
-import Classes_DegradeFire4 as Classy
+#!/usr/bin/env python
+import Classes_Gillespie as Classy
 import numpy as np
 import pandas as pd
-import math
-from pathlib import Path
 from numpy import random
-
-''' main Distributed Delay Stochastic Simulation Algorithm 
- http://localhost:8888/edit/BioResearch/python/Functions.py#   
- NOTE: There is no checking for negative values in this version.'''
 
 
 def gillespie(reactions_list, stop_time, initial_state_vector):
-    [state_vector, current_time, service_queue, time_series] = initialize(initial_state_vector)#changed
-    subIterations = 220
-
-#computationally, appending one row to a time series 100k times is expensive. It is much cheaper to append 100 rows to the time series 1k times
-#As such, a subseries has
-# the equation for how many computations are required =
-#0.5*(data_rows/subIterations+1)*data_rows+(subIterations+2)*(subIterations+1)*data_rows/(2*data_rows) This is optimized for about 50000 rows, actual use varies but for the estimated values this results in only .7% time used
-    time_series = pd.DataFrame([[current_time, state_vector]], columns=["time", "state"])
-    iter = 0
+    [state_vector, current_time, service_queue, time_series] = initialize(initial_state_vector)
+    max_buffer = 220
+    iterator = 0
     while current_time < stop_time:
-        time_subseries = pd.DataFrame( columns=["time", "state"])
-        if iter ==0:
-            time_subseries =pd.DataFrame([[current_time, state_vector]], columns=["time", "state"])
-        iter = 0
-        while current_time < stop_time and iter<subIterations:
-
+        buffer = pd.DataFrame(columns=["time", "state"])
+        if iterator == 0:
+            buffer = pd.DataFrame([[current_time, state_vector]], columns=["time", "state"])
+        iterator = 0
+        while current_time < stop_time and iterator < max_buffer:
             cumulative_propensities = calculate_propensities(state_vector, reactions_list)
             next_event_time = draw_next_event_time(current_time, cumulative_propensities)
             if reaction_will_complete(service_queue, next_event_time):
                 [state_vector, current_time] = trigger_next_reaction(service_queue, state_vector)
-                time_subseries = update_time_series(time_subseries, current_time, state_vector)
-
+                buffer = update_time_series(buffer, current_time, state_vector)
                 continue
             current_time = next_event_time
             next_reaction = choose_reaction(cumulative_propensities, reactions_list)
             processing_time = next_reaction.distribution()
-            if processing_time == 0: # DMI
+            if processing_time == 0:
                 state_vector = state_vector + next_reaction.change_vec
-                time_subseries = update_time_series(time_subseries, current_time, state_vector)
+                buffer = update_time_series(buffer, current_time, state_vector)
             else:
                 add_reaction(service_queue, current_time + processing_time, next_reaction)
-            if(len(time_subseries)>0):
-                iter = len(time_subseries)
-        '''print(type(time_series))
-        print(type(time_subseries))
-        print(time_subseries)'''
-        if len(time_series)<3:
-            time_series = time_subseries
-        else:
-            time_series = time_series.append(time_subseries, ignore_index=True)# append the subseries to the series
-    print("time_series")
-    print(time_series)
+            if len(buffer) > 0:
+                iterator = len(buffer)
+        time_series = time_series.append(buffer, ignore_index=True)
     return dataframe_to_numpyarray(time_series)
-
 
 
 def initialize(initial_state_vector):
     state_vector = initial_state_vector
     current_time = 0
     service_queue = []
-    time_series = pd.DataFrame([[current_time, state_vector]], columns=['time', 'state'])
+    time_series = pd.DataFrame(columns=["time", "state"])
     return [state_vector, current_time, service_queue, time_series]
 
 
@@ -83,7 +61,6 @@ def reaction_will_complete(queue, next_event_time):
 
 
 def draw_next_event_time(current_time, cumulative_propensities):
-    # print(cumulative_propensities[0])# debug
     return current_time + np.random.exponential(scale=(1 / cumulative_propensities[-1]))
 
 
@@ -119,20 +96,12 @@ def trigger_next_reaction(queue, state_vector):
     next_reaction = queue.pop(0)
     state_vector = state_vector + next_reaction.change_vec
     current_time = next_reaction.comp_time
-    return [state_vector, current_time]# made data frame
+    return [state_vector, current_time]
 
 
-def update_time_series(time_subseries, current_time, state_vector):
-    '''print("time fresh")
-    print(time_subseries)
-    print("time Append")
-    print(time_subseries.append(pd.DataFrame([[current_time, state_vector]])))'''
-    return time_subseries.append (pd.DataFrame([[current_time, state_vector]],columns = ["time",  "state"]))
-    # DMI columns=['time', 'state']) , ignore_index=True
+def update_time_series(time_series, current_time, state_vector):
+    return time_series.append(pd.DataFrame([[current_time, state_vector]], columns=["time",  "state"]))
 
-
-# we are not sure if it is memory efficient to hae this function or if it is better to reove the content of
-# this function and move to where the function is called
 
 ''' dataframe_to_numpyarray allows us to use the more efficient DataFrame class to record time series
     and then convert that object back into a usable numpy array. '''
@@ -148,22 +117,29 @@ def dataframe_to_numpyarray(framed_data):
     return arrayed_data
 
 
-def gillespie_sim(mu, cv, alpha, beta, R0, C0, yr, param, par, dilution, enzymatic_degradation):
-    # model parameters
-    init_Protein = (alpha - yr) * (mu - C0 * (math.sqrt(alpha / yr) - 1) / yr) * (
-                .1 / (.1 + cv))  # calculate the avg peak to initialize at a peak
+''' list_for_parallelization converts the tensor of parameter values into a long list for parallelization. 
+    example usage: list_for_parallelization([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    returns [[1, 4, 7], [2, 4, 7], [3, 4, 7], [1, 5, 7], [2, 5, 7], [3, 5, 7], [1, 6, 7], [2, 6, 7], [3, 6, 7], 
+             [1, 4, 8], [2, 4, 8], [3, 4, 8], [1, 5, 8], [2, 5, 8], [3, 5, 8], [1, 6, 8], [2, 6, 8], [3, 6, 8], 
+             [1, 4, 9], [2, 4, 9], [3, 4, 9], [1, 5, 9], [2, 5, 9], [3, 5, 9], [1, 6, 9], [2, 6, 9], [3, 6, 9]]
+'''
 
-    dilution = Reaction(np.array([-1], dtype=int), 0, 0, [0, beta, 1, 0], 1, [0])
-    enzymatic_degradation = Reaction(np.array([-1], dtype=int), 0, 0, [0, yr, R0, 1], 1, [0])
-    production = Classy.Reaction(np.array([1], dtype=int), 0, 1, [alpha, C0, 2], 0, [mu, mu * cv])
-    timeRun = 4
-    # Naming files and paths
-    path1 = 'PostProcessing/Simulations/{}{}'.format(param, par)
-    file_name = '{}/mean={}_CV={}.csv'.format(path1, mu, cv)
 
-    # Gillespie
-    time_series = gillespie(np.array([production, enzymatic_degradation, dilution]), timeRun,
-                            np.array([init_Protein], dtype=int))
+def recursive_list_formation(parameter_ranges, long_list):
+    if len(parameter_ranges) != 0:
+        par_range = len(parameter_ranges[0])
+        current_length = len(long_list)
+        long_list = long_list * par_range
+        for index1 in range(par_range):
+            for index2 in range(index1 * current_length, (index1 + 1) * current_length):
+                long_list[index2] = long_list[index2] + [parameter_ranges[0][index1]]
+        return recursive_list_formation(parameter_ranges[1:], long_list)
+    else:
+        return long_list
 
-    pd.DataFrame(time_series).to_csv(file_name, header=False, index=False)
-    return file_name
+
+def list_for_parallelization(parameter_ranges):
+    long_list = []
+    for index in range(len(parameter_ranges[0])):
+        long_list.append([parameter_ranges[0][index]])
+    return recursive_list_formation(parameter_ranges[1:], long_list)
